@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AIterLab</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="mark">AI</span>
+          <div>
+            <h1>AIterLab</h1>
+            <p>Realtime experiment platform</p>
+          </div>
+        </div>
+        <button id="startDemo" class="primary">Start demo loop</button>
+        <section>
+          <h2>Experiments</h2>
+          <div id="experiments" class="experiment-list"></div>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Current run</p>
+            <h2 id="currentTitle">No experiment running</h2>
+          </div>
+          <div class="status-row">
+            <span id="connectionState" class="pill">offline</span>
+            <span id="eventCount" class="pill">0 events</span>
+          </div>
+        </header>
+
+        <section class="grid">
+          <article class="panel plan">
+            <h3>AI Plan</h3>
+            <div id="planList" class="plan-list"></div>
+          </article>
+
+          <article class="panel chart">
+            <h3>Realtime Metrics</h3>
+            <canvas id="metricCanvas" width="900" height="320"></canvas>
+            <div class="legend">
+              <span><i class="score"></i>score</span>
+              <span><i class="loss"></i>loss</span>
+            </div>
+          </article>
+
+          <article class="panel log">
+            <h3>Runner Log</h3>
+            <pre id="logOutput"></pre>
+          </article>
+
+          <article class="panel note">
+            <h3>AI Note</h3>
+            <div id="noteOutput" class="note-body"></div>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

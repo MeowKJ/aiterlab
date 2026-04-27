@@ -51,10 +51,37 @@ AIterLab 是一个新的开源工具，专门用于 AI 迭代实验的实时展�
 
 ## 当前状态
 
-项目处于规划和脚手架阶段。下一步建议先实现最小可运行闭环：
+项目已经有第一版零依赖本地 demo。它可以创建模拟 AI 迭代实验，实时推送事件，并写入 logs、metrics、AI note 和历史实验目录。
 
 ```text
 创建实验 -> 运行一轮迭代 -> 实时显示日志/指标 -> 写入 AI note -> 保存历史结果
+```
+
+## Quick Start
+
+```bash
+node apps/server/src/index.js
+```
+
+Then open:
+
+```text
+http://localhost:4317
+```
+
+Available endpoints:
+
+```text
+GET  /api/health
+GET  /api/experiments
+POST /api/demo/start
+GET  /api/events/stream
+```
+
+The demo writes experiment history into:
+
+```text
+data/experiments/
 ```
 
 ## License
