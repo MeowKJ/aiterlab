@@ -8,7 +8,10 @@
   "scripts": {
     "dev": "node apps/server/src/index.js",
     "start": "node apps/server/src/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "test:syntax": "node scripts/check-js.js",
+    "test:auto": "node --test test/auto-iteration.test.js",
+    "verify": "node scripts/check-js.js && node --test"
   },
   "workspaces": [
     "apps/*",

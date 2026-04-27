@@ -47,6 +47,8 @@ AIterLab 是一个新的开源工具，专门用于 AI 迭代实验的实时展�
 - [Agent 调用集成](</C:/Users/ijink/Documents/New project/aiterlab/docs/AGENT_INTEGRATION.md>)
 - [实时流与并发](</C:/Users/ijink/Documents/New project/aiterlab/docs/REALTIME_STREAMING.md>)
 - [ABCD 评分机制](</C:/Users/ijink/Documents/New project/aiterlab/docs/SCORING.md>)
+- [生产计划](</C:/Users/ijink/Documents/New project/aiterlab/docs/PRODUCTION_PLAN.md>)
+- [测试说明](</C:/Users/ijink/Documents/New project/aiterlab/docs/TESTING.md>)
 - [技术栈规划](</C:/Users/ijink/Documents/New project/aiterlab/docs/TECH_STACK.md>)
 - [AI note 规格](</C:/Users/ijink/Documents/New project/aiterlab/docs/AI_NOTE_SPEC.md>)
 
@@ -84,6 +86,14 @@ The demo writes experiment history into:
 ```text
 data/experiments/
 ```
+
+## Testing
+
+```bash
+npm run verify
+```
+
+The automated integration test starts AIterLab, runs the demo loop, and verifies that the ABCD evaluator reaches `A`.
 
 ## License
 
