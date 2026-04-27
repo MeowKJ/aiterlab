@@ -17,6 +17,10 @@ import {
   finalizeNote,
   noteToMarkdown
 } from "../../../packages/ai-note/src/index.js";
+import {
+  evaluateIteration,
+  recommendNextCandidate
+} from "../../../packages/evaluator/src/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
@@ -154,14 +158,18 @@ async function createIteration(experiment, index) {
 }
 
 async function runDemoExperiment(experiment) {
-  for (let index = 1; index <= 3; index += 1) {
+  let candidate = 1;
+  const maxIterations = 5;
+
+  for (let index = 1; index <= maxIterations; index += 1) {
     const iteration = await createIteration(experiment, index);
     const runId = `run_demo_${String(index).padStart(3, "0")}`;
+    const metrics = [];
     const note = createAiNote({
       id: `note_${iteration.id}`,
       experimentId: experiment.id,
       iterationId: iteration.id,
-      hypothesis: `Iteration ${index}: adjust candidate parameters and observe whether score improves.`
+      hypothesis: `Iteration ${index}: test candidate strength ${candidate.toFixed(2)} and observe whether the ABCD grade reaches A.`
     });
     await saveNote(experiment.id, iteration.id, note);
 
@@ -169,7 +177,8 @@ async function runDemoExperiment(experiment) {
       makePlanItem(iteration, 1, "Prepare candidate configuration", "completed"),
       makePlanItem(iteration, 2, "Run simulated experiment", "running"),
       makePlanItem(iteration, 3, "Analyze metric trend", "pending"),
-      makePlanItem(iteration, 4, "Write AI note", "pending")
+      makePlanItem(iteration, 4, "Score with ABCD evaluator", "pending"),
+      makePlanItem(iteration, 5, "Write AI note", "pending")
     ];
     await savePlan(experiment.id, iteration.id, plan);
     publishPlan(experiment.id, iteration.id, plan);
@@ -184,8 +193,10 @@ async function runDemoExperiment(experiment) {
 
     let currentNote = note;
     for (let step = 1; step <= 20; step += 1) {
-      const score = Number((0.52 + index * 0.08 + Math.sin(step / 3) * 0.03 + step * 0.006).toFixed(4));
-      const loss = Number((1.1 - score + Math.cos(step / 4) * 0.02).toFixed(4));
+      const score = Number((0.5 + candidate * 0.12 + Math.sin(step / 3) * 0.025 + step * 0.006).toFixed(4));
+      const loss = Number((1.05 - score + Math.cos(step / 4) * 0.018).toFixed(4));
+      metrics.push({ name: "score", value: score, step });
+      metrics.push({ name: "loss", value: loss, step });
 
       eventBus.publish({
         type: "runner.log",
@@ -216,7 +227,7 @@ async function runDemoExperiment(experiment) {
       });
 
       if (step === 8 || step === 16) {
-        const observation = `At step ${step}, score=${score}, loss=${loss}; trend is ${score > 0.7 ? "promising" : "still warming up"}.`;
+        const observation = `At step ${step}, score=${score}, loss=${loss}; candidate=${candidate.toFixed(2)} is ${score > 0.7 ? "promising" : "still warming up"}.`;
         currentNote = appendObservation(currentNote, observation);
         await saveNote(experiment.id, iteration.id, currentNote);
         eventBus.publish({
@@ -239,18 +250,43 @@ async function runDemoExperiment(experiment) {
     plan[3].status = "completed";
     plan[3].startedAt = plan[2].endedAt;
     plan[3].endedAt = nowIso();
+    plan[4].status = "completed";
+    plan[4].startedAt = plan[3].endedAt;
+    plan[4].endedAt = nowIso();
     await savePlan(experiment.id, iteration.id, plan);
     publishPlan(experiment.id, iteration.id, plan);
 
     currentNote = finalizeNote(currentNote, {
-      action: `Ran simulated candidate ${index}.`,
-      result: `Candidate ${index} completed with a stable improvement trend.`,
-      reasoning: "The score improved across the run while loss stayed bounded, so the next iteration can push the candidate slightly further.",
-      nextPlan: index < 3 ? `Use candidate ${index + 1} with a more aggressive search step.` : "Promote the best candidate into a reproducible experiment.",
-      confidence: 0.72 + index * 0.05,
-      tags: ["demo", "iteration", "realtime"]
+      action: `Ran simulated candidate strength ${candidate.toFixed(2)}.`,
+      result: "Candidate completed and is ready for ABCD evaluation.",
+      reasoning: "The evaluator will combine outcome, trend, stability, note quality, and run health before accepting the iteration.",
+      nextPlan: "Use the ABCD grade to decide whether to stop or run another candidate.",
+      confidence: Math.min(0.95, 0.68 + index * 0.06),
+      tags: ["demo", "iteration", "realtime", "abcd-score"]
+    });
+
+    const evaluation = evaluateIteration({
+      metrics,
+      note: currentNote,
+      run: { status: "completed", code: 0 }
+    });
+    const recommendation = recommendNextCandidate({
+      previousCandidate: candidate,
+      evaluation
+    });
+    currentNote = finalizeNote(currentNote, {
+      result: `ABCD evaluator assigned grade ${evaluation.grade} with score ${evaluation.numericScore}.`,
+      reasoning: evaluation.summary,
+      nextPlan: recommendation.reason,
+      confidence: Math.min(0.98, evaluation.numericScore)
     });
     await saveNote(experiment.id, iteration.id, currentNote);
+    await saveEvaluation(experiment.id, iteration.id, {
+      ...evaluation,
+      candidate,
+      recommendation,
+      evaluatedAt: nowIso()
+    });
 
     eventBus.publish({
       type: "note.finalized",
@@ -260,6 +296,14 @@ async function runDemoExperiment(experiment) {
       payload: { note: currentNote }
     });
     eventBus.publish({
+      type: "evaluation.scored",
+      experimentId: experiment.id,
+      iterationId: iteration.id,
+      runId,
+      source: { kind: "evaluator", id: "abcd" },
+      payload: { evaluation: { ...evaluation, candidate, recommendation } }
+    });
+    eventBus.publish({
       type: "run.completed",
       experimentId: experiment.id,
       iterationId: iteration.id,
@@ -267,7 +311,39 @@ async function runDemoExperiment(experiment) {
       source: { kind: "mock-runner", id: runId },
       payload: { code: 0 }
     });
+
+    if (evaluation.targetReached) {
+      await updateExperimentStatus(experiment.id, "completed");
+      eventBus.publish({
+        type: "experiment.target_reached",
+        experimentId: experiment.id,
+        iterationId: iteration.id,
+        runId,
+        source: { kind: "evaluator", id: "abcd" },
+        payload: {
+          target: "A",
+          grade: evaluation.grade,
+          numericScore: evaluation.numericScore,
+          message: "Target grade A reached. Auto-iteration stopped."
+        }
+      });
+      break;
+    }
+
+    candidate = recommendation.candidate;
   }
+}
+
+async function updateExperimentStatus(experimentId, status) {
+  const experimentPath = path.join(dataRoot, experimentId, "experiment.json");
+  const experiment = await readJsonFile(experimentPath);
+  const updated = {
+    ...experiment,
+    status,
+    updatedAt: nowIso()
+  };
+  await writeJson(experimentPath, updated);
+  return updated;
 }
 
 function makePlanItem(iteration, order, title, status) {
@@ -322,7 +398,8 @@ async function readExperimentSummary(experimentId) {
     const iteration = await readJsonFile(path.join(iterationDir, "iteration.json")).catch(() => null);
     const note = await readJsonFile(path.join(iterationDir, "ai_note.json")).catch(() => null);
     const plan = await readJsonFile(path.join(iterationDir, "plan.json")).catch(() => []);
-    iterations.push({ iteration, note, plan });
+    const evaluation = await readJsonFile(path.join(iterationDir, "evaluation.json")).catch(() => null);
+    iterations.push({ iteration, note, plan, evaluation });
   }
 
   return { experiment, iterations };
@@ -336,6 +413,10 @@ async function saveNote(experimentId, iterationId, note) {
   const iterationDir = getIterationDir(experimentId, iterationId);
   await writeJson(path.join(iterationDir, "ai_note.json"), note);
   await writeFile(path.join(iterationDir, "ai_note.md"), noteToMarkdown(note), "utf8");
+}
+
+async function saveEvaluation(experimentId, iterationId, evaluation) {
+  await writeJson(path.join(getIterationDir(experimentId, iterationId), "evaluation.json"), evaluation);
 }
 
 function getIterationDir(experimentId, iterationId) {

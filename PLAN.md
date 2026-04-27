@@ -30,6 +30,7 @@ packages: @aiterlab/*
 - `Plan`：AI 当前计划、已完成步骤和未来步骤
 - `Result`：指标、图表、波形、文件、日志、快照
 - `AI Note`：AI 对每轮实验的假设、观察、解释、失败分析和下一步判断
+- `Evaluation`：ABCD 评分、是否达到 A、下一轮推荐
 
 ## 3. 产品目标
 
@@ -155,6 +156,25 @@ AI note 要支持两种形式：
 - 进程取消和回收
 
 详细设计见 [实时流与并发](</C:/Users/ijink/Documents/New project/aiterlab/docs/REALTIME_STREAMING.md>)。
+
+### 3.6 ABCD 自动评分
+
+AIterLab 使用 ABCD 评分机制判断每轮迭代是否达标。首版目标是自动迭代到 `A`：
+
+- `A`：达到目标，停止迭代
+- `B`：接近目标，小幅增强下一轮 candidate
+- `C`：需要改进，中幅增强下一轮 candidate
+- `D`：明显不足，大幅调整下一轮 candidate
+
+评分维度：
+
+- outcome
+- trend
+- stability
+- noteQuality
+- runHealth
+
+详细设计见 [ABCD 评分机制](</C:/Users/ijink/Documents/New project/aiterlab/docs/SCORING.md>)。
 
 ### 3.5 超高 AI 可编辑 UI
 
@@ -325,6 +345,7 @@ aiterlab/
     shared-schema/
     experiment-runner/
     realtime-stream/
+    evaluator/
     mcp-server/
     agent-adapters/
     ui-widgets/

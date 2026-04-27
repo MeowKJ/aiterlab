@@ -159,7 +159,7 @@ h1 {
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(420px, 1.6fr);
+  grid-template-columns: minmax(240px, 0.8fr) minmax(240px, 0.8fr) minmax(420px, 1.5fr);
   grid-template-rows: 330px minmax(330px, calc(100vh - 430px));
   gap: 14px;
 }
@@ -217,6 +217,59 @@ h1 {
   height: calc(100% - 52px);
   background: #ffffff;
   border: 1px solid var(--line);
+}
+
+.score-output {
+  display: grid;
+  gap: 12px;
+}
+
+.grade {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  color: white;
+  background: var(--ink);
+  font-size: 52px;
+  font-weight: 800;
+}
+
+.score-output .numeric {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.criteria {
+  display: grid;
+  gap: 7px;
+}
+
+.criterion {
+  display: grid;
+  grid-template-columns: 92px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bar {
+  height: 8px;
+  background: #e2e8e2;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.target {
+  padding: 9px 10px;
+  color: white;
+  background: var(--good);
+  font-weight: 700;
 }
 
 .legend {
@@ -286,6 +339,6 @@ h1 {
 
   .grid {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(4, 320px);
+    grid-template-rows: repeat(5, 320px);
   }
 }

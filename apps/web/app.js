@@ -8,6 +8,8 @@ const state = {
     score: [],
     loss: []
   },
+  evaluations: new Map(),
+  targetReached: null,
   notes: new Map(),
   source: null
 };
@@ -21,6 +23,7 @@ const els = {
   planList: document.querySelector("#planList"),
   logOutput: document.querySelector("#logOutput"),
   noteOutput: document.querySelector("#noteOutput"),
+  scoreOutput: document.querySelector("#scoreOutput"),
   metricCanvas: document.querySelector("#metricCanvas")
 };
 
@@ -77,6 +80,8 @@ function connectStream(experimentId) {
     "run.failed",
     "runner.log",
     "metric",
+    "evaluation.scored",
+    "experiment.target_reached",
     "plan.updated",
     "note.observation",
     "note.finalized",
@@ -115,6 +120,14 @@ function handleEvent(event) {
     state.metrics[name] = state.metrics[name].slice(-120);
   }
 
+  if (event.type === "evaluation.scored") {
+    state.evaluations.set(event.iterationId, event.payload.evaluation);
+  }
+
+  if (event.type === "experiment.target_reached") {
+    state.targetReached = event.payload;
+  }
+
   if (event.type === "note.observation") {
     const note = state.notes.get(event.iterationId) || { observation: [] };
     note.observation = [...(note.observation || []), event.payload.observation];
@@ -135,6 +148,7 @@ function hydrateSummary(summary) {
   state.plan = latest.plan || [];
   for (const item of summary.iterations) {
     if (item.note && item.iteration) state.notes.set(item.iteration.id, item.note);
+    if (item.evaluation && item.iteration) state.evaluations.set(item.iteration.id, item.evaluation);
   }
 }
 
@@ -144,6 +158,8 @@ function resetLiveState() {
   state.plan = [];
   state.logs = [];
   state.metrics = { score: [], loss: [] };
+  state.evaluations = new Map();
+  state.targetReached = null;
   state.notes = new Map();
   render();
 }
@@ -156,6 +172,7 @@ function render() {
   renderPlan();
   renderLogs();
   renderNote();
+  renderScore();
   renderChart();
 }
 
@@ -195,6 +212,35 @@ function renderNote() {
     <p>${escapeHtml(note.result || "Waiting for final result...")}</p>
     <h4>Next Plan</h4>
     <p>${escapeHtml(note.nextPlan || "Waiting for next plan...")}</p>
+  `;
+}
+
+function renderScore() {
+  const evaluation = state.evaluations.get(state.currentIterationId);
+  if (!evaluation) {
+    els.scoreOutput.innerHTML = "<p>Waiting for ABCD evaluator...</p>";
+    return;
+  }
+
+  const criteria = evaluation.criteria || {};
+  const rows = Object.entries(criteria)
+    .map(([name, value]) => `
+      <div class="criterion">
+        <span>${escapeHtml(name)}</span>
+        <div class="bar"><span style="width:${Math.round(value * 100)}%"></span></div>
+        <strong>${Math.round(value * 100)}</strong>
+      </div>
+    `)
+    .join("");
+
+  els.scoreOutput.innerHTML = `
+    <div class="grade">${escapeHtml(evaluation.grade)}</div>
+    <div>
+      <div class="numeric">${Number(evaluation.numericScore).toFixed(3)}</div>
+      <p>${escapeHtml(evaluation.summary || "")}</p>
+    </div>
+    <div class="criteria">${rows}</div>
+    ${evaluation.targetReached || state.targetReached ? '<div class="target">Target A reached</div>' : ""}
   `;
 }
 

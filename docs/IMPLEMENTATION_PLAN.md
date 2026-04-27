@@ -46,6 +46,7 @@ aiterlab/
     shared-schema/
     experiment-runner/
     realtime-stream/
+    evaluator/
     mcp-server/
     agent-adapters/
     ai-note/
@@ -92,6 +93,7 @@ aiterlab/
 - 用 Zod 定义 `WaveformChunkEvent`
 - 用 Zod 定义 `RunEvent`
 - 用 Zod 定义 `StreamSource`
+- 定义 ABCD evaluation result
 - 用 Zod 定义 `WidgetLayout`
 - 用 Zod 定义 `AgentCommandResult`
 - 用 Zod 定义 `AgentError`
@@ -307,6 +309,7 @@ aiterlab/
 - 建 web
 - 建 runner 空包
 - 建 realtime-stream 空包
+- 建 evaluator 空包
 - 建 mcp-server 空包
 - 建 agent-adapters 空包
 
@@ -376,7 +379,20 @@ aiterlab/
 
 产出：
 
-- aiterlab 能承载真正的并发 AI 实验，而不是单进程演示
+- AIterLab 能承载真正的并发 AI 实验，而不是单进程演示
+
+### Sprint 7：ABCD 自动评分
+
+- 实现 `@aiterlab/evaluator`
+- 定义 ABCD 阈值
+- 定义 outcome/trend/stability/noteQuality/runHealth 权重
+- 每轮迭代写入 `evaluation.json`
+- 未达到 A 时自动推荐下一轮 candidate
+- 达到 A 时发布 `experiment.target_reached`
+
+产出：
+
+- AIterLab 可以自动迭代测试，并在达到 A 后停止
 
 ## 7. 技术决策
 

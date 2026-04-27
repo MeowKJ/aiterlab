@@ -34,6 +34,7 @@ packages/
   shared-schema/     Zod/TypeScript 数据模型
   experiment-runner/ 后台实验执行器
   realtime-stream/   实时事件总线、JSONL、WebSocket fanout
+  evaluator/          ABCD 自动评分和下一轮推荐
   mcp-server/        Codex/Claude Code 可调用 MCP server
   agent-adapters/    Codex skill 和 Claude Code 命令模板
   ui-widgets/        可编辑 widget 系统
@@ -101,6 +102,7 @@ data/
 - 实验/迭代 CRUD
 - AI plan 写入与状态更新
 - AI note 写入、解析、索引
+- ABCD 评分和自动迭代决策
 - 实时事件 WebSocket 推送
 - 实时事件总线
 - 多 runner 并发调度
@@ -276,6 +278,7 @@ aiterlab note append
 @aiterlab/mcp-server
 @aiterlab/agent-adapters
 @aiterlab/realtime-stream
+@aiterlab/evaluator
 ```
 
 Agent 调用方式：
@@ -309,6 +312,7 @@ CI -> aiterlab CLI
 - AI note 写入
 - CLI JSON/JSONL 输出
 - in-process realtime event bus
+- ABCD evaluator
 
 ### v0.2
 
@@ -346,6 +350,7 @@ Runtime: Node.js 24 LTS
 Frontend: React 19 + Vite + TanStack Router + TanStack Query
 Realtime: @aiterlab/realtime-stream + WebSocket + JSONL
 Backend: Fastify + TypeScript
+Evaluation: @aiterlab/evaluator ABCD scoring
 Database: SQLite + Drizzle ORM
 Validation: Zod
 Charts: Apache ECharts

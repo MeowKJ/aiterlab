@@ -46,6 +46,7 @@ AIterLab 是一个新的开源工具，专门用于 AI 迭代实验的实时展�
 - [实施计划](</C:/Users/ijink/Documents/New project/aiterlab/docs/IMPLEMENTATION_PLAN.md>)
 - [Agent 调用集成](</C:/Users/ijink/Documents/New project/aiterlab/docs/AGENT_INTEGRATION.md>)
 - [实时流与并发](</C:/Users/ijink/Documents/New project/aiterlab/docs/REALTIME_STREAMING.md>)
+- [ABCD 评分机制](</C:/Users/ijink/Documents/New project/aiterlab/docs/SCORING.md>)
 - [技术栈规划](</C:/Users/ijink/Documents/New project/aiterlab/docs/TECH_STACK.md>)
 - [AI note 规格](</C:/Users/ijink/Documents/New project/aiterlab/docs/AI_NOTE_SPEC.md>)
 
@@ -54,7 +55,7 @@ AIterLab 是一个新的开源工具，专门用于 AI 迭代实验的实时展�
 项目已经有第一版零依赖本地 demo。它可以创建模拟 AI 迭代实验，实时推送事件，并写入 logs、metrics、AI note 和历史实验目录。
 
 ```text
-创建实验 -> 运行一轮迭代 -> 实时显示日志/指标 -> 写入 AI note -> 保存历史结果
+创建实验 -> 自动迭代 -> ABCD 评分 -> 达到 A -> 写入 AI note -> 保存历史结果
 ```
 
 ## Quick Start

@@ -32,6 +32,8 @@ export const eventTypes = [
   "file.created",
   "figure.created",
   "plan.updated",
+  "evaluation.scored",
+  "experiment.target_reached",
   "note.observation",
   "note.finalized",
   "layout.updated",
