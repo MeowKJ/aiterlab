@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+.next/
+coverage/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+Thumbs.db
+data/experiments/*
+!data/experiments/.gitkeep
