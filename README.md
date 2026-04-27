@@ -63,7 +63,7 @@ AIterLab 是一个新的开源工具，专门用于 AI 迭代实验的实时展�
 ## Quick Start
 
 ```bash
-node apps/server/src/index.js
+pnpm start
 ```
 
 Then open:
@@ -90,10 +90,18 @@ data/experiments/
 ## Testing
 
 ```bash
-npm run verify
+pnpm run verify
 ```
 
 The automated integration test starts AIterLab, runs the demo loop, and verifies that the ABCD evaluator reaches `A`.
+
+## CLI
+
+```bash
+pnpm cli demo auto --port 4317 --timeout 60000
+```
+
+The CLI prints JSON and is designed for Codex, Claude Code, CI, and other agents.
 
 ## License
 

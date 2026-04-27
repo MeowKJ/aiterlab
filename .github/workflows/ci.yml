@@ -23,11 +23,16 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+
       - name: Syntax check
-        run: npm run test:syntax
+        run: pnpm run test:syntax
 
       - name: Unit and integration tests
-        run: npm test
+        run: pnpm test
 
       - name: Full verification
-        run: npm run verify
+        run: pnpm run verify

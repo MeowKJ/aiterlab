@@ -5,10 +5,11 @@ AIterLab is designed so the computer can verify the experiment loop automaticall
 ## Commands
 
 ```bash
-npm run test:syntax
-npm test
-npm run test:auto
-npm run verify
+pnpm run test:syntax
+pnpm test
+pnpm run test:auto
+pnpm run test:cli
+pnpm run verify
 ```
 
 ## What Is Tested
@@ -26,6 +27,12 @@ npm run verify
 - waits for auto-iteration
 - checks the final grade is A
 - checks experiment status is completed
+
+`test:cli`
+
+- runs `aiterlab demo auto`
+- checks JSON output
+- checks the CLI reaches Grade A
 
 `verify`
 

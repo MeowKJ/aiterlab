@@ -30,7 +30,7 @@ v0.1 production target:
 Command:
 
 ```bash
-npm run test:syntax
+pnpm run test:syntax
 ```
 
 Requirement:
@@ -44,7 +44,7 @@ All JavaScript files pass node --check.
 Command:
 
 ```bash
-npm test
+pnpm test
 ```
 
 Requirement:
@@ -58,7 +58,7 @@ Evaluator tests pass.
 Command:
 
 ```bash
-npm run test:auto
+pnpm run test:auto
 ```
 
 Requirement:
@@ -72,7 +72,7 @@ Computer starts the server, runs the demo, waits for Grade A, and verifies compl
 Command:
 
 ```bash
-npm run verify
+pnpm run verify
 ```
 
 Requirement:
@@ -94,7 +94,7 @@ Acceptance:
 - Auto-iteration reaches A.
 - `evaluation.json` is written.
 - `experiment.target_reached` is emitted.
-- `npm run verify` passes.
+- `pnpm run verify` passes.
 
 ### M2: Real Runner Integration
 
@@ -159,7 +159,7 @@ Expected final state:
 
 Before a release:
 
-- `npm run verify`
+- `pnpm run verify`
 - README quick start works.
 - `LICENSE` is GPL-3.0-only.
 - demo reaches A locally.
