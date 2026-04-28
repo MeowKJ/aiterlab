@@ -23,8 +23,6 @@ const state = {
 };
 
 const els = {
-  startDemo: document.querySelector("#startDemo"),
-  startScanDryRun: document.querySelector("#startScanDryRun"),
   experiments: document.querySelector("#experiments"),
   experimentHint: document.querySelector("#experimentHint"),
   currentTitle: document.querySelector("#currentTitle"),
@@ -38,37 +36,6 @@ const els = {
   scanOutput: document.querySelector("#scanOutput"),
   metricCanvas: document.querySelector("#metricCanvas")
 };
-
-els.startDemo.addEventListener("click", async () => {
-  els.startDemo.disabled = true;
-  try {
-    const result = await postJson("/api/demo/start", {});
-    state.currentExperiment = result.data;
-    resetLiveState();
-    connectStream(state.currentExperiment.id);
-    await loadExperiments();
-  } finally {
-    els.startDemo.disabled = false;
-  }
-});
-
-els.startScanDryRun.addEventListener("click", async () => {
-  els.startScanDryRun.disabled = true;
-  try {
-    const result = await postJson("/api/scans/dry-run", {
-      widthMm: 30,
-      heightMm: 20,
-      stepMm: 5,
-      pointDelayMs: 60
-    });
-    state.currentExperiment = result.data;
-    resetLiveState();
-    connectStream(state.currentExperiment.id);
-    await loadExperiments();
-  } finally {
-    els.startScanDryRun.disabled = false;
-  }
-});
 
 await loadExperiments();
 render();
@@ -86,15 +53,16 @@ async function loadExperiments() {
 
   if (!experiments.length) {
     els.experiments.innerHTML = `
-      <p class="empty">暂无正式实验。演示和 dry-run 已折叠，不再占满列表。</p>
+      <p class="empty">暂无正式实验。开发验证记录已折叠，不再占满列表。</p>
       ${hiddenCount ? `<p class="utility-summary">已折叠 ${hiddenCount} 个开发验证实验。</p>` : ""}
     `;
     return;
   }
 
   for (const experiment of experiments) {
-    const card = document.createElement("button");
+    const card = document.createElement("article");
     card.className = "experiment-card";
+    card.tabIndex = 0;
     card.innerHTML = `
       <strong>${escapeHtml(localizeExperimentName(experiment.name))}</strong>
       <span class="experiment-status ${escapeHtml(experiment.status || "unknown")}">${escapeHtml(localizeStatus(experiment.status))}</span>
@@ -108,6 +76,9 @@ async function loadExperiments() {
       const summary = await fetchJson(`/api/experiments/${experiment.id}`);
       hydrateSummary(summary.data);
       render();
+    });
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") card.click();
     });
     els.experiments.append(card);
   }
@@ -268,7 +239,7 @@ function render() {
     ].join(" · ");
   } else {
     els.currentTitle.textContent = "暂无运行中的实验";
-    els.currentMeta.textContent = "选择左侧最近实验，或启动一次新的实时实验。";
+    els.currentMeta.textContent = "等待 AI、CLI、API 或外部实验进程接管后写入实时数据。";
   }
   els.eventCount.textContent = `${state.eventCount} 条事件`;
   renderPlan();
@@ -282,7 +253,7 @@ function render() {
 function renderPlan() {
   els.planList.innerHTML = "";
   if (!state.plan.length) {
-    els.planList.innerHTML = `<p class="empty">启动实验后，这里会显示当前运行、已经完成、未来计划和时间。</p>`;
+    els.planList.innerHTML = `<p class="empty">实验被 AI 或外部进程接管后，这里会显示当前运行、已经完成、未来计划和时间。</p>`;
     return;
   }
   const groups = [
@@ -371,7 +342,7 @@ function renderScan() {
   const current = state.scan.current;
 
   if (!total) {
-    els.scanOutput.innerHTML = "<p>启动扫描 dry-run 后，这里会显示网格进度和实时点位数据。</p>";
+    els.scanOutput.innerHTML = "<p>扫描任务接管后，这里会显示网格进度和实时点位数据。</p>";
     return;
   }
 
@@ -516,7 +487,7 @@ function localizeStatus(status) {
 
 function localizeExperimentName(name) {
   return {
-    "AIterLab demo": "AI 迭代演示",
+    "AIterLab demo": "开发验证记录",
     "AIterLab scan dry-run": "扫描 dry-run"
   }[name] || name || "未命名实验";
 }

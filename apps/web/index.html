@@ -16,8 +16,10 @@
             <p>实时 AI 实验平台</p>
           </div>
         </div>
-        <button id="startDemo" class="primary">启动 AI 迭代演示</button>
-        <button id="startScanDryRun" class="secondary">启动扫描 dry-run</button>
+        <div class="control-note">
+          <strong>只读监控台</strong>
+          <p>实验由 AI、CLI、API 或外部进程接管；人类界面只负责观察实时状态。</p>
+        </div>
         <section>
           <div class="section-title">
             <h2>最近实验</h2>
@@ -32,7 +34,7 @@
           <div>
             <p class="eyebrow">当前实验</p>
             <h2 id="currentTitle">暂无运行中的实验</h2>
-            <p id="currentMeta" class="current-meta">选择左侧实验，或启动一次新的实时实验。</p>
+            <p id="currentMeta" class="current-meta">等待 AI 或外部实验进程接管后写入实时数据。</p>
           </div>
           <div class="status-row">
             <span id="connectionState" class="pill">offline</span>
