@@ -52,6 +52,18 @@ async function main() {
     return;
   }
 
+  if (command === "scan" && args[1] === "dry-run") {
+    const port = optionNumber(args, "--port", 4317);
+    const body = {
+      widthMm: optionNumber(args, "--width-mm", 30),
+      heightMm: optionNumber(args, "--height-mm", 20),
+      stepMm: optionNumber(args, "--step-mm", 5),
+      pointDelayMs: optionNumber(args, "--point-delay-ms", 20)
+    };
+    writeJson(await postJson(port, "/api/scans/dry-run", body));
+    return;
+  }
+
   throw new Error(`Unknown command: ${args.join(" ")}`);
 }
 
@@ -173,6 +185,7 @@ Commands:
   aiterlab experiments --port 4317
   aiterlab demo start --port 4317
   aiterlab demo auto --port 4317 --timeout 60000
+  aiterlab scan dry-run --port 4317 --width-mm 30 --height-mm 20 --step-mm 5
 
 All commands print JSON.
 `);

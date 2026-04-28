@@ -9,6 +9,7 @@ pnpm run test:syntax
 pnpm test
 pnpm run test:auto
 pnpm run test:cli
+pnpm run test:scan
 pnpm run verify
 ```
 
@@ -33,6 +34,12 @@ pnpm run verify
 - runs `aiterlab demo auto`
 - checks JSON output
 - checks the CLI reaches Grade A
+
+`test:scan`
+
+- starts the server
+- runs scan dry-run takeover
+- verifies scan experiment reaches completed state
 
 `verify`
 

@@ -8,5 +8,6 @@ __pycache__/
 .env
 .DS_Store
 Thumbs.db
+aiterlab-*.png
 data/experiments/*
 !data/experiments/.gitkeep

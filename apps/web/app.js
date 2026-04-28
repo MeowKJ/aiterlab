@@ -10,12 +10,21 @@ const state = {
   },
   evaluations: new Map(),
   targetReached: null,
+  scan: {
+    active: false,
+    completedPoints: 0,
+    totalPoints: 0,
+    current: null,
+    maxSignal: null,
+    meanSignal: null
+  },
   notes: new Map(),
   source: null
 };
 
 const els = {
   startDemo: document.querySelector("#startDemo"),
+  startScanDryRun: document.querySelector("#startScanDryRun"),
   experiments: document.querySelector("#experiments"),
   currentTitle: document.querySelector("#currentTitle"),
   connectionState: document.querySelector("#connectionState"),
@@ -24,6 +33,7 @@ const els = {
   logOutput: document.querySelector("#logOutput"),
   noteOutput: document.querySelector("#noteOutput"),
   scoreOutput: document.querySelector("#scoreOutput"),
+  scanOutput: document.querySelector("#scanOutput"),
   metricCanvas: document.querySelector("#metricCanvas")
 };
 
@@ -37,6 +47,24 @@ els.startDemo.addEventListener("click", async () => {
     await loadExperiments();
   } finally {
     els.startDemo.disabled = false;
+  }
+});
+
+els.startScanDryRun.addEventListener("click", async () => {
+  els.startScanDryRun.disabled = true;
+  try {
+    const result = await postJson("/api/scans/dry-run", {
+      widthMm: 30,
+      heightMm: 20,
+      stepMm: 5,
+      pointDelayMs: 60
+    });
+    state.currentExperiment = result.data;
+    resetLiveState();
+    connectStream(state.currentExperiment.id);
+    await loadExperiments();
+  } finally {
+    els.startScanDryRun.disabled = false;
   }
 });
 
@@ -78,6 +106,11 @@ function connectStream(experimentId) {
     "run.started",
     "run.completed",
     "run.failed",
+    "scan.started",
+    "scan.progress",
+    "scan.point",
+    "scan.completed",
+    "scan.failed",
     "runner.log",
     "metric",
     "evaluation.scored",
@@ -120,6 +153,36 @@ function handleEvent(event) {
     state.metrics[name] = state.metrics[name].slice(-120);
   }
 
+  if (event.type === "scan.started") {
+    state.scan = {
+      active: true,
+      completedPoints: 0,
+      totalPoints: event.payload.scan.totalPoints,
+      current: null,
+      maxSignal: null,
+      meanSignal: null
+    };
+  }
+
+  if (event.type === "scan.progress") {
+    state.scan.active = true;
+    state.scan.completedPoints = event.payload.completedPoints;
+    state.scan.totalPoints = event.payload.totalPoints;
+    state.scan.current = event.payload.current;
+  }
+
+  if (event.type === "scan.point") {
+    const signal = event.payload.signal;
+    state.scan.current = event.payload;
+    state.scan.maxSignal = Math.max(state.scan.maxSignal ?? signal, signal);
+  }
+
+  if (event.type === "scan.completed") {
+    state.scan.active = false;
+    state.scan.maxSignal = event.payload.maxSignal;
+    state.scan.meanSignal = event.payload.meanSignal;
+  }
+
   if (event.type === "evaluation.scored") {
     state.evaluations.set(event.iterationId, event.payload.evaluation);
   }
@@ -160,6 +223,14 @@ function resetLiveState() {
   state.metrics = { score: [], loss: [] };
   state.evaluations = new Map();
   state.targetReached = null;
+  state.scan = {
+    active: false,
+    completedPoints: 0,
+    totalPoints: 0,
+    current: null,
+    maxSignal: null,
+    meanSignal: null
+  };
   state.notes = new Map();
   render();
 }
@@ -173,6 +244,7 @@ function render() {
   renderLogs();
   renderNote();
   renderScore();
+  renderScan();
   renderChart();
 }
 
@@ -241,6 +313,29 @@ function renderScore() {
     </div>
     <div class="criteria">${rows}</div>
     ${evaluation.targetReached || state.targetReached ? '<div class="target">Target A reached</div>' : ""}
+  `;
+}
+
+function renderScan() {
+  const total = state.scan.totalPoints || 0;
+  const completed = state.scan.completedPoints || 0;
+  const progress = total ? Math.round((completed / total) * 100) : 0;
+  const current = state.scan.current;
+
+  if (!total) {
+    els.scanOutput.innerHTML = "<p>Start a scan dry-run to see grid progress and point data.</p>";
+    return;
+  }
+
+  els.scanOutput.innerHTML = `
+    <div class="progress-track"><span style="width:${progress}%"></span></div>
+    <div class="scan-kpis">
+      <div><span>Progress</span><strong>${completed}/${total}</strong></div>
+      <div><span>Status</span><strong>${state.scan.active ? "running" : "done"}</strong></div>
+      <div><span>X/Y</span><strong>${current ? `${current.xMm}, ${current.yMm}` : "-"}</strong></div>
+      <div><span>Signal</span><strong>${current?.signal ?? state.scan.maxSignal ?? "-"}</strong></div>
+    </div>
+    <p>max=${state.scan.maxSignal ?? "-"} mean=${state.scan.meanSignal ?? "-"}</p>
   `;
 }
 

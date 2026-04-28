@@ -89,6 +89,22 @@ h1 {
   font-weight: 700;
 }
 
+.secondary {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--panel);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.secondary:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 .primary:disabled {
   opacity: 0.65;
   cursor: wait;
@@ -160,7 +176,7 @@ h1 {
 .grid {
   display: grid;
   grid-template-columns: minmax(240px, 0.8fr) minmax(240px, 0.8fr) minmax(420px, 1.5fr);
-  grid-template-rows: 330px minmax(330px, calc(100vh - 430px));
+  grid-template-rows: 330px 330px minmax(330px, calc(100vh - 760px));
   gap: 14px;
 }
 
@@ -272,6 +288,38 @@ h1 {
   font-weight: 700;
 }
 
+.scan-output {
+  display: grid;
+  gap: 12px;
+}
+
+.progress-track {
+  height: 14px;
+  background: #e2e8e2;
+}
+
+.progress-track span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.scan-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.scan-kpis div {
+  padding: 10px;
+  background: var(--panel-2);
+}
+
+.scan-kpis strong {
+  display: block;
+  font-size: 20px;
+}
+
 .legend {
   display: flex;
   gap: 14px;
@@ -339,6 +387,6 @@ h1 {
 
   .grid {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(5, 320px);
+    grid-template-rows: repeat(6, 320px);
   }
 }

@@ -21,6 +21,10 @@ import {
   evaluateIteration,
   recommendNextCandidate
 } from "../../../packages/evaluator/src/index.js";
+import {
+  createScanPlan,
+  runDryRunScan
+} from "../../../packages/scan-adapter/src/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
@@ -80,6 +84,23 @@ async function route(request, response) {
     runDemoExperiment(experiment).catch((error) => {
       eventBus.publish({
         type: "system.error",
+        experimentId: experiment.id,
+        payload: { message: error.message }
+      });
+    });
+    sendJson(response, 202, ok(experiment));
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/scans/dry-run") {
+    const body = await readJson(request);
+    const experiment = await createExperiment({
+      name: body.name || "AIterLab scan dry-run",
+      description: "Dry-run scan experiment with realtime scan progress and point data."
+    });
+    runDryRunScanExperiment(experiment, body).catch((error) => {
+      eventBus.publish({
+        type: "scan.failed",
         experimentId: experiment.id,
         payload: { message: error.message }
       });
@@ -332,6 +353,96 @@ async function runDemoExperiment(experiment) {
 
     candidate = recommendation.candidate;
   }
+}
+
+async function runDryRunScanExperiment(experiment, options = {}) {
+  const iteration = await createIteration(experiment, 1);
+  const runId = createId("run_scan");
+  const scanPlan = createScanPlan({
+    widthMm: Number(options.widthMm || 30),
+    heightMm: Number(options.heightMm || 20),
+    stepMm: Number(options.stepMm || 5),
+    xStartMm: Number(options.xStartMm || 0),
+    yStartMm: Number(options.yStartMm || 0),
+    mode: options.mode || "serpentine"
+  });
+  const note = createAiNote({
+    id: `note_${iteration.id}`,
+    experimentId: experiment.id,
+    iterationId: iteration.id,
+    hypothesis: "Dry-run the scan control loop and verify realtime progress, point data, and signal metrics before hardware takeover."
+  });
+  await saveNote(experiment.id, iteration.id, note);
+
+  const plan = [
+    makePlanItem(iteration, 1, "Create scan grid", "completed"),
+    makePlanItem(iteration, 2, "Stream scan points", "running"),
+    makePlanItem(iteration, 3, "Summarize scan signal", "pending"),
+    makePlanItem(iteration, 4, "Write AI scan note", "pending")
+  ];
+  await savePlan(experiment.id, iteration.id, plan);
+  publishPlan(experiment.id, iteration.id, plan);
+
+  eventBus.publish({
+    type: "run.started",
+    experimentId: experiment.id,
+    iterationId: iteration.id,
+    runId,
+    source: { kind: "scan-adapter", id: "dry-run" },
+    payload: { command: "scan:dry-run", scan: scanPlan }
+  });
+
+  const summary = await runDryRunScan({
+    eventBus,
+    experimentId: experiment.id,
+    iterationId: iteration.id,
+    runId,
+    plan: scanPlan,
+    pointDelayMs: Number(options.pointDelayMs || 80)
+  });
+
+  plan[1].status = "completed";
+  plan[1].endedAt = nowIso();
+  plan[2].status = "completed";
+  plan[2].startedAt = plan[1].endedAt;
+  plan[2].endedAt = nowIso();
+  plan[3].status = "completed";
+  plan[3].startedAt = plan[2].endedAt;
+  plan[3].endedAt = nowIso();
+  await savePlan(experiment.id, iteration.id, plan);
+  publishPlan(experiment.id, iteration.id, plan);
+
+  const finalNote = finalizeNote(note, {
+    action: `Executed dry-run scan grid ${scanPlan.nx}x${scanPlan.ny} (${scanPlan.totalPoints} points).`,
+    observation: [
+      `Max simulated signal=${summary.maxSignal}.`,
+      `Mean simulated signal=${summary.meanSignal}.`,
+      "Realtime scan.progress and scan.point events were emitted."
+    ],
+    result: "Scan dry-run completed without touching hardware.",
+    reasoning: "The event pipeline is ready to receive real scan progress from 24G/60G runner output or a scan SDK adapter.",
+    nextPlan: "After explicit hardware confirmation, connect the real scan command through the runner with serial ports and safety preflight.",
+    confidence: 0.88,
+    tags: ["scan", "dry-run", "realtime"]
+  });
+  await saveNote(experiment.id, iteration.id, finalNote);
+
+  eventBus.publish({
+    type: "note.finalized",
+    experimentId: experiment.id,
+    iterationId: iteration.id,
+    runId,
+    payload: { note: finalNote }
+  });
+  eventBus.publish({
+    type: "run.completed",
+    experimentId: experiment.id,
+    iterationId: iteration.id,
+    runId,
+    source: { kind: "scan-adapter", id: "dry-run" },
+    payload: { code: 0, summary }
+  });
+  await updateExperimentStatus(experiment.id, "completed");
 }
 
 async function updateExperimentStatus(experimentId, status) {
