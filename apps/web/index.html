@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -13,13 +13,16 @@
           <span class="mark">AI</span>
           <div>
             <h1>AIterLab</h1>
-            <p>Realtime experiment platform</p>
+            <p>实时 AI 实验平台</p>
           </div>
         </div>
-        <button id="startDemo" class="primary">Start demo loop</button>
-        <button id="startScanDryRun" class="secondary">Start scan dry-run</button>
+        <button id="startDemo" class="primary">启动 AI 迭代演示</button>
+        <button id="startScanDryRun" class="secondary">启动扫描 dry-run</button>
         <section>
-          <h2>Experiments</h2>
+          <div class="section-title">
+            <h2>最近实验</h2>
+            <span id="experimentHint">最多显示 6 个</span>
+          </div>
           <div id="experiments" class="experiment-list"></div>
         </section>
       </aside>
@@ -27,33 +30,34 @@
       <section class="workspace">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Current run</p>
-            <h2 id="currentTitle">No experiment running</h2>
+            <p class="eyebrow">当前实验</p>
+            <h2 id="currentTitle">暂无运行中的实验</h2>
+            <p id="currentMeta" class="current-meta">选择左侧实验，或启动一次新的实时实验。</p>
           </div>
           <div class="status-row">
             <span id="connectionState" class="pill">offline</span>
-            <span id="eventCount" class="pill">0 events</span>
+            <span id="eventCount" class="pill">0 条事件</span>
           </div>
         </header>
 
         <section class="grid">
           <article class="panel plan">
-            <h3>AI Plan</h3>
+            <h3>AI 计划</h3>
             <div id="planList" class="plan-list"></div>
           </article>
 
           <article class="panel score">
-            <h3>ABCD Score</h3>
+            <h3>ABCD 评分</h3>
             <div id="scoreOutput" class="score-output"></div>
           </article>
 
           <article class="panel scan">
-            <h3>Scan Progress</h3>
+            <h3>扫描进度</h3>
             <div id="scanOutput" class="scan-output"></div>
           </article>
 
           <article class="panel chart">
-            <h3>Realtime Metrics</h3>
+            <h3>实时指标</h3>
             <canvas id="metricCanvas" width="900" height="320"></canvas>
             <div class="legend">
               <span><i class="score"></i>score</span>
@@ -62,12 +66,12 @@
           </article>
 
           <article class="panel log">
-            <h3>Runner Log</h3>
+            <h3>运行日志</h3>
             <pre id="logOutput"></pre>
           </article>
 
           <article class="panel note">
-            <h3>AI Note</h3>
+            <h3>AI 记录</h3>
             <div id="noteOutput" class="note-body"></div>
           </article>
         </section>

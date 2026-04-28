@@ -1,11 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 const repoRoot = new URL("..", import.meta.url);
 
 test("aiterlab CLI can run the auto demo to Grade A", async () => {
   const port = 5600 + Math.floor(Math.random() * 1000);
+  const dataRoot = await mkdtemp(path.join(tmpdir(), "aiterlab-test-"));
   const child = spawn(process.execPath, [
     "apps/cli/src/index.js",
     "demo",
@@ -16,6 +20,10 @@ test("aiterlab CLI can run the auto demo to Grade A", async () => {
     "60000"
   ], {
     cwd: repoRoot,
+    env: {
+      ...process.env,
+      AITERLAB_DATA_ROOT: dataRoot
+    },
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true
   });

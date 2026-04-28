@@ -29,7 +29,9 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
 const webRoot = path.join(repoRoot, "apps", "web");
-const dataRoot = path.join(repoRoot, "data", "experiments");
+const dataRoot = process.env.AITERLAB_DATA_ROOT
+  ? path.resolve(process.env.AITERLAB_DATA_ROOT)
+  : path.join(repoRoot, "data", "experiments");
 const port = Number(process.env.AITERLAB_PORT || process.argv.find((arg) => arg.startsWith("--port="))?.split("=")[1] || 4317);
 
 const eventBus = new EventBus({ bufferSize: 5000 });

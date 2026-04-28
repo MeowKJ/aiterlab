@@ -1,16 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 const repoRoot = new URL("..", import.meta.url);
 
 test("AIterLab can take over a dry-run scan and complete realtime progress", async () => {
   const port = 6600 + Math.floor(Math.random() * 1000);
+  const dataRoot = await mkdtemp(path.join(tmpdir(), "aiterlab-test-"));
   const server = spawn(process.execPath, ["apps/server/src/index.js"], {
     cwd: repoRoot,
     env: {
       ...process.env,
-      AITERLAB_PORT: String(port)
+      AITERLAB_PORT: String(port),
+      AITERLAB_DATA_ROOT: dataRoot
     },
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true
