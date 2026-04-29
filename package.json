@@ -9,6 +9,7 @@
   "scripts": {
     "cli": "node apps/cli/src/index.js",
     "dev": "node apps/server/src/index.js",
+    "mcp": "node packages/mcp-server/src/index.js",
     "start": "node apps/server/src/index.js",
     "test": "node --test",
     "test:cli": "node --test test/cli-auto.test.js",

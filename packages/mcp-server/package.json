@@ -1,0 +1,12 @@
+{
+  "name": "@aiterlab/mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "aiterlab-mcp": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  }
+}

@@ -42,20 +42,29 @@ AIterLab 是一个新的开源工具，专门用于 AI 迭代实验的实时展�
 
 ## 文档
 
-- [项目规划](</C:/Users/ijink/Documents/New project/aiterlab/PLAN.md>)
-- [实施计划](</C:/Users/ijink/Documents/New project/aiterlab/docs/IMPLEMENTATION_PLAN.md>)
-- [Agent 调用集成](</C:/Users/ijink/Documents/New project/aiterlab/docs/AGENT_INTEGRATION.md>)
-- [实时流与并发](</C:/Users/ijink/Documents/New project/aiterlab/docs/REALTIME_STREAMING.md>)
-- [ABCD 评分机制](</C:/Users/ijink/Documents/New project/aiterlab/docs/SCORING.md>)
-- [扫描实验接管](</C:/Users/ijink/Documents/New project/aiterlab/docs/SCAN_TAKEOVER.md>)
-- [生产计划](</C:/Users/ijink/Documents/New project/aiterlab/docs/PRODUCTION_PLAN.md>)
-- [测试说明](</C:/Users/ijink/Documents/New project/aiterlab/docs/TESTING.md>)
-- [技术栈规划](</C:/Users/ijink/Documents/New project/aiterlab/docs/TECH_STACK.md>)
-- [AI note 规格](</C:/Users/ijink/Documents/New project/aiterlab/docs/AI_NOTE_SPEC.md>)
+- [项目规划](PLAN.md)
+- [实施计划](docs/IMPLEMENTATION_PLAN.md)
+- [Agent 调用集成](docs/AGENT_INTEGRATION.md)
+- [MCP Server](docs/MCP.md)
+- [实时流与并发](docs/REALTIME_STREAMING.md)
+- [ABCD 评分机制](docs/SCORING.md)
+- [扫描实验接管](docs/SCAN_TAKEOVER.md)
+- [生产计划](docs/PRODUCTION_PLAN.md)
+- [测试说明](docs/TESTING.md)
+- [技术栈规划](docs/TECH_STACK.md)
+- [AI note 规格](docs/AI_NOTE_SPEC.md)
 
 ## 当前状态
 
 项目已经有第一版零依赖本地 demo。它可以创建模拟 AI 迭代实验，实时推送事件，并写入 logs、metrics、AI note 和历史实验目录。
+
+当前接口层包括：
+
+- Core API：本地服务、Web/Desktop 和外部脚本使用。
+- SSE：实时事件流与历史回放。
+- CLI：终端、CI、多进程实验和外部 Python 使用。
+- MCP Server：Codex、Claude Code、Claude Desktop、Cursor 等 Agent 原生调用。
+- 只读 Web 看板：人类观察实验状态和 Agent 协作过程。
 
 ```text
 创建实验 -> 自动迭代 -> ABCD 评分 -> 达到 A -> 写入 AI note -> 保存历史结果
@@ -79,6 +88,8 @@ Available endpoints:
 GET  /api/health
 GET  /api/experiments
 POST /api/demo/start
+POST /api/agent/sessions
+POST /api/agent/events
 GET  /api/events/stream
 ```
 
@@ -100,13 +111,34 @@ The automated integration test starts AIterLab, runs the demo loop, and verifies
 
 ```bash
 pnpm cli demo auto --port 4317 --timeout 60000
+pnpm cli agent demo --port 4317
+pnpm mcp
 ```
 
 The CLI prints JSON and is designed for Codex, Claude Code, CI, and other agents.
 
+## MCP
+
+AIterLab includes a local stdio MCP server:
+
+```bash
+pnpm mcp
+```
+
+It exposes tools such as:
+
+```text
+aiterlab.create_agent_session
+aiterlab.emit_agent_event
+aiterlab.get_experiment_summary
+aiterlab.start_scan_dry_run
+```
+
+This lets Agent clients report their current phase, commands, file changes, blockers, metrics, and experiment results into the same realtime dashboard.
+
 ## License
 
-GPL-3.0-only. See [LICENSE](</C:/Users/ijink/Documents/New project/aiterlab/LICENSE>).
+GPL-3.0-only. See [LICENSE](LICENSE).
 
 
 
