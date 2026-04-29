@@ -38,7 +38,12 @@ const els = {
 };
 
 await loadExperiments();
-render();
+const initialExperimentId = new URL(window.location.href).searchParams.get("experimentId");
+if (initialExperimentId) {
+  await loadExperimentById(initialExperimentId);
+} else {
+  render();
+}
 
 async function loadExperiments() {
   const result = await fetchJson("/api/experiments");
@@ -70,18 +75,22 @@ async function loadExperiments() {
       <small>耗时 ${formatDurationBetween(experiment.createdAt, experiment.updatedAt)}</small>
     `;
     card.addEventListener("click", async () => {
-      state.currentExperiment = experiment;
-      resetLiveState();
-      connectStream(experiment.id);
-      const summary = await fetchJson(`/api/experiments/${experiment.id}`);
-      hydrateSummary(summary.data);
-      render();
+      await loadExperimentById(experiment.id);
     });
     card.addEventListener("keydown", (event) => {
       if (event.key === "Enter") card.click();
     });
     els.experiments.append(card);
   }
+}
+
+async function loadExperimentById(experimentId) {
+  const summary = await fetchJson(`/api/experiments/${encodeURIComponent(experimentId)}`);
+  state.currentExperiment = summary.data.experiment;
+  resetLiveState();
+  connectStream(experimentId);
+  hydrateSummary(summary.data);
+  render();
 }
 
 function connectStream(experimentId) {
