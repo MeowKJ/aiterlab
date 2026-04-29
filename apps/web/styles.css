@@ -235,7 +235,7 @@ h1 {
 .grid {
   display: grid;
   grid-template-columns: minmax(240px, 0.8fr) minmax(240px, 0.8fr) minmax(420px, 1.5fr);
-  grid-template-rows: 330px 330px minmax(330px, calc(100vh - 760px));
+  grid-auto-rows: 330px;
   gap: 14px;
 }
 
@@ -250,6 +250,10 @@ h1 {
 .panel h3 {
   margin-bottom: 14px;
   font-size: 15px;
+}
+
+.agent {
+  grid-column: span 2;
 }
 
 .plan-list {
@@ -364,6 +368,98 @@ h1 {
   gap: 12px;
 }
 
+.agent-output {
+  display: grid;
+  gap: 12px;
+  height: calc(100% - 34px);
+  overflow: auto;
+}
+
+.agent-current {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-left: 4px solid var(--accent);
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.agent-current.completed {
+  border-color: var(--good);
+}
+
+.agent-current.blocked {
+  border-color: var(--warn);
+}
+
+.agent-current span,
+.agent-current small,
+.agent-event small,
+.agent-hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.agent-current strong {
+  font-size: 22px;
+}
+
+.agent-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.agent-columns section {
+  min-width: 0;
+  padding: 10px;
+  background: var(--panel-2);
+}
+
+.agent-columns h4 {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.agent-files,
+.agent-commands {
+  display: grid;
+  gap: 6px;
+}
+
+.agent-files span,
+.agent-commands code {
+  overflow: hidden;
+  padding: 6px 7px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: #24312b;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-timeline {
+  display: grid;
+  gap: 8px;
+}
+
+.agent-event {
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: rgba(251, 252, 248, 0.78);
+}
+
+.agent-event strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.agent-event p {
+  margin-bottom: 5px;
+  line-height: 1.45;
+}
+
 .progress-track {
   height: 14px;
   background: #e2e8e2;
@@ -458,6 +554,14 @@ h1 {
 
   .grid {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(6, 320px);
+    grid-auto-rows: 320px;
+  }
+
+  .agent {
+    grid-column: auto;
+  }
+
+  .agent-columns {
+    grid-template-columns: 1fr;
   }
 }

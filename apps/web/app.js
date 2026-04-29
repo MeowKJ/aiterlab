@@ -2,6 +2,7 @@ const state = {
   currentExperiment: null,
   currentIterationId: null,
   eventCount: 0,
+  seenEvents: new Set(),
   plan: [],
   logs: [],
   metrics: {
@@ -17,6 +18,15 @@ const state = {
     current: null,
     maxSignal: null,
     meanSignal: null
+  },
+  agent: {
+    actor: null,
+    status: "idle",
+    phase: null,
+    message: null,
+    timeline: [],
+    files: [],
+    commands: []
   },
   notes: new Map(),
   source: null
@@ -34,6 +44,7 @@ const els = {
   noteOutput: document.querySelector("#noteOutput"),
   scoreOutput: document.querySelector("#scoreOutput"),
   scanOutput: document.querySelector("#scanOutput"),
+  agentOutput: document.querySelector("#agentOutput"),
   metricCanvas: document.querySelector("#metricCanvas")
 };
 
@@ -114,6 +125,13 @@ function connectStream(experimentId) {
     "scan.point",
     "scan.completed",
     "scan.failed",
+    "agent.session.started",
+    "agent.status",
+    "agent.plan_delta",
+    "agent.file_changed",
+    "agent.command",
+    "agent.blocked",
+    "agent.session.completed",
     "runner.log",
     "metric",
     "evaluation.scored",
@@ -136,6 +154,8 @@ function connectStream(experimentId) {
 }
 
 function handleEvent(event) {
+  if (event.id && state.seenEvents.has(event.id)) return;
+  if (event.id) state.seenEvents.add(event.id);
   state.eventCount += 1;
   state.currentIterationId = event.iterationId || state.currentIterationId;
 
@@ -186,6 +206,10 @@ function handleEvent(event) {
     state.scan.meanSignal = event.payload.meanSignal;
   }
 
+  if (event.type.startsWith("agent.")) {
+    handleAgentEvent(event);
+  }
+
   if (event.type === "evaluation.scored") {
     state.evaluations.set(event.iterationId, event.payload.evaluation);
   }
@@ -216,10 +240,14 @@ function hydrateSummary(summary) {
     if (item.note && item.iteration) state.notes.set(item.iteration.id, item.note);
     if (item.evaluation && item.iteration) state.evaluations.set(item.iteration.id, item.evaluation);
   }
+  for (const event of summary.events || []) {
+    handleEvent(event);
+  }
 }
 
 function resetLiveState() {
   state.eventCount = 0;
+  state.seenEvents = new Set();
   state.currentIterationId = null;
   state.plan = [];
   state.logs = [];
@@ -233,6 +261,15 @@ function resetLiveState() {
     current: null,
     maxSignal: null,
     meanSignal: null
+  };
+  state.agent = {
+    actor: null,
+    status: "idle",
+    phase: null,
+    message: null,
+    timeline: [],
+    files: [],
+    commands: []
   };
   state.notes = new Map();
   render();
@@ -256,7 +293,41 @@ function render() {
   renderNote();
   renderScore();
   renderScan();
+  renderAgent();
   renderChart();
+}
+
+function handleAgentEvent(event) {
+  const payload = event.payload || {};
+  state.agent.actor = payload.actor || event.source?.id || state.agent.actor || "agent";
+  state.agent.status = payload.status || agentStatusFromType(event.type);
+  state.agent.phase = payload.phase || state.agent.phase;
+  state.agent.message = payload.message || state.agent.message;
+
+  if (payload.command) {
+    state.agent.commands = [
+      { command: payload.command, timestamp: event.timestamp, type: event.type },
+      ...state.agent.commands
+    ].slice(0, 8);
+  }
+
+  for (const file of payload.files || []) {
+    if (!state.agent.files.includes(file)) {
+      state.agent.files = [file, ...state.agent.files].slice(0, 10);
+    }
+  }
+
+  state.agent.timeline = [
+    {
+      type: event.type,
+      timestamp: event.timestamp,
+      actor: state.agent.actor,
+      status: state.agent.status,
+      phase: state.agent.phase,
+      message: payload.message || localizeAgentEventType(event.type)
+    },
+    ...state.agent.timeline
+  ].slice(0, 30);
 }
 
 function renderPlan() {
@@ -364,6 +435,53 @@ function renderScan() {
       <div><span>Signal</span><strong>${current?.signal ?? state.scan.maxSignal ?? "-"}</strong></div>
     </div>
     <p>max=${state.scan.maxSignal ?? "-"} mean=${state.scan.meanSignal ?? "-"}</p>
+  `;
+}
+
+function renderAgent() {
+  if (!state.agent.timeline.length) {
+    els.agentOutput.innerHTML = `
+      <p class="empty">等待 Codex、Claude Code 或外部 Agent 推送协作状态。</p>
+      <p class="agent-hint">推荐使用 CLI：aiterlab agent start / emit / demo。</p>
+    `;
+    return;
+  }
+
+  const latest = state.agent.timeline[0];
+  const files = state.agent.files
+    .map((file) => `<span>${escapeHtml(file)}</span>`)
+    .join("");
+  const commands = state.agent.commands
+    .map((item) => `<code>${escapeHtml(item.command)}</code>`)
+    .join("");
+  const timeline = state.agent.timeline
+    .map((item) => `
+      <div class="agent-event ${escapeHtml(item.status || "")}">
+        <strong>${escapeHtml(localizeAgentEventType(item.type))}</strong>
+        <p>${escapeHtml(item.message || "")}</p>
+        <small>${escapeHtml(item.actor || "agent")} · ${escapeHtml(item.phase || "working")} · ${formatTime(item.timestamp)}</small>
+      </div>
+    `)
+    .join("");
+
+  els.agentOutput.innerHTML = `
+    <div class="agent-current ${escapeHtml(state.agent.status)}">
+      <span>${escapeHtml(state.agent.actor || "agent")}</span>
+      <strong>${escapeHtml(localizeAgentStatus(state.agent.status))}</strong>
+      <p>${escapeHtml(latest.message || state.agent.message || "")}</p>
+      <small>${escapeHtml(state.agent.phase || "working")} · ${formatTime(latest.timestamp)}</small>
+    </div>
+    <div class="agent-columns">
+      <section>
+        <h4>文件</h4>
+        <div class="agent-files">${files || "<p>暂无文件变化</p>"}</div>
+      </section>
+      <section>
+        <h4>命令</h4>
+        <div class="agent-commands">${commands || "<p>暂无命令记录</p>"}</div>
+      </section>
+    </div>
+    <div class="agent-timeline">${timeline}</div>
   `;
 }
 
@@ -492,6 +610,34 @@ function localizeStatus(status) {
     pending: "待执行",
     failed: "失败"
   }[status] || "未知";
+}
+
+function agentStatusFromType(type) {
+  if (type === "agent.blocked") return "blocked";
+  if (type === "agent.session.completed") return "completed";
+  return "running";
+}
+
+function localizeAgentStatus(status) {
+  return {
+    idle: "等待",
+    running: "协作中",
+    blocked: "阻塞",
+    completed: "完成",
+    failed: "失败"
+  }[status] || "未知";
+}
+
+function localizeAgentEventType(type) {
+  return {
+    "agent.session.started": "会话开始",
+    "agent.status": "状态更新",
+    "agent.plan_delta": "计划变化",
+    "agent.file_changed": "文件变化",
+    "agent.command": "命令执行",
+    "agent.blocked": "遇到阻塞",
+    "agent.session.completed": "会话完成"
+  }[type] || type;
 }
 
 function localizeExperimentName(name) {

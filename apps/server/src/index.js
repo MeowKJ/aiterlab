@@ -111,6 +111,60 @@ async function route(request, response) {
     return;
   }
 
+  if (request.method === "POST" && url.pathname === "/api/agent/sessions") {
+    const body = await readJson(request);
+    const experiment = await createExperiment({
+      name: body.name || "Agent collaboration session",
+      description: body.description || "Live collaboration stream from Codex, Claude Code, or another AI operator."
+    });
+    const iteration = await createIteration(experiment, 1);
+    const event = eventBus.publish({
+      type: "agent.session.started",
+      experimentId: experiment.id,
+      iterationId: iteration.id,
+      source: { kind: "agent", id: body.actor || "agent" },
+      payload: {
+        actor: body.actor || "agent",
+        status: "running",
+        phase: body.phase || "session-start",
+        message: body.goal || "Agent collaboration session started.",
+        goal: body.goal || null
+      }
+    });
+    sendJson(response, 201, ok({
+      experiment,
+      iteration,
+      event,
+      url: `http://localhost:${port}/?experimentId=${encodeURIComponent(experiment.id)}`
+    }));
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/agent/events") {
+    const body = await readJson(request);
+    const event = eventBus.publish({
+      type: body.type || "agent.status",
+      experimentId: body.experimentId,
+      iterationId: body.iterationId,
+      runId: body.runId,
+      source: body.source || { kind: "agent", id: body.actor || "agent" },
+      payload: {
+        actor: body.actor || body.source?.id || "agent",
+        status: body.status || "running",
+        phase: body.phase || null,
+        message: body.message || "",
+        files: body.files || [],
+        command: body.command || null,
+        details: body.details || null
+      }
+    });
+    if (event.type === "agent.session.completed" && event.experimentId) {
+      await updateExperimentStatus(event.experimentId, "completed");
+    }
+    sendJson(response, 201, ok(event));
+    return;
+  }
+
   if (request.method === "POST" && url.pathname === "/api/events") {
     const event = eventBus.publish(await readJson(request));
     sendJson(response, 201, ok(event));
@@ -512,10 +566,16 @@ async function readExperimentSummary(experimentId) {
     const note = await readJsonFile(path.join(iterationDir, "ai_note.json")).catch(() => null);
     const plan = await readJsonFile(path.join(iterationDir, "plan.json")).catch(() => []);
     const evaluation = await readJsonFile(path.join(iterationDir, "evaluation.json")).catch(() => null);
-    iterations.push({ iteration, note, plan, evaluation });
+    const events = await readJsonlFile(path.join(iterationDir, "events.jsonl")).catch(() => []);
+    iterations.push({ iteration, note, plan, evaluation, events });
   }
 
-  return { experiment, iterations };
+  const events = iterations
+    .flatMap((item) => item.events || [])
+    .sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)))
+    .slice(-500);
+
+  return { experiment, iterations, events };
 }
 
 async function savePlan(experimentId, iterationId, plan) {
@@ -609,6 +669,14 @@ async function readJson(request) {
 
 async function readJsonFile(filePath) {
   return JSON.parse(await readFile(filePath, "utf8"));
+}
+
+async function readJsonlFile(filePath) {
+  const text = await readFile(filePath, "utf8");
+  return text
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
 }
 
 async function writeJson(filePath, data) {
